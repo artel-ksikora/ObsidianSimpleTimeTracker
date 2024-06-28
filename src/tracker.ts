@@ -1,5 +1,6 @@
 import {moment, App, MarkdownSectionInformation, ButtonComponent, TextComponent, TFile, MarkdownRenderer} from "obsidian";
 import {SimpleTimeTrackerSettings} from "./settings";
+import { loadData } from "./serializer";
 
 export interface Tracker {
     entries: Entry[];
@@ -13,6 +14,10 @@ export interface Entry {
 }
 
 export async function saveTracker(tracker: Tracker, app: App, fileName: string, section: MarkdownSectionInformation): Promise<void> {
+    console.log(tracker);
+    console.log(fileName);
+    console.log(section);
+    
     let file = app.vault.getAbstractFileByPath(fileName) as TFile;
     if (!file)
         return;
@@ -28,17 +33,18 @@ export async function saveTracker(tracker: Tracker, app: App, fileName: string, 
     await app.vault.modify(file, content);
 }
 
-export function loadTracker(json: string): Tracker {
-    if (json) {
-        try {
-            let ret = JSON.parse(json);
-            fixLegacyTimestamps(ret.entries);
-            return ret;
-        } catch (e) {
-            console.log(`Failed to parse Tracker from ${json}`);
-        }
-    }
-    return {entries: []};
+export async function loadTracker(json: string): Promise<Tracker> {
+    // try {
+    //     let ret = JSON.parse(json);
+    //     fixLegacyTimestamps(ret.entries);
+    //     return ret;
+    // } catch (e) {
+    //     console.log(`Failed to parse Tracker from ${json}`);
+    // }
+
+    // return {entries: []}
+    
+    return await loadData(json);
 }
 
 export function displayTracker(tracker: Tracker, element: HTMLElement, file: string, getSectionInfo: () => MarkdownSectionInformation, settings: SimpleTimeTrackerSettings): void {
@@ -243,7 +249,7 @@ function formatDuration(totalTime: number, settings: SimpleTimeTrackerSettings):
     return ret;
 }
 
-function fixLegacyTimestamps(entries: Entry[]): void {
+export function fixLegacyTimestamps(entries: Entry[]): void {
     for (let entry of entries) {
         if (entry.startTime && !isNaN(+entry.startTime))
             entry.startTime = moment.unix(+entry.startTime).toISOString();
